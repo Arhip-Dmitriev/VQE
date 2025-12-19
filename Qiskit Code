@@ -1,0 +1,29 @@
+import numpy as np
+from qiskit.quantum_info import SparsePauliOp
+from qiskit.circuit.library import TwoLocal
+from qiskit.primitives import StatevectorEstimator
+from scipy.optimize import minimize
+
+hamiltonian = SparsePauliOp.from_list([
+    ("II", -1.05237),
+    ("IZ", 0.39793),
+    ("ZI", -0.39793),
+    ("ZZ", -0.01128),
+    ("XX", 0.18093)
+])
+
+ansatz = TwoLocal(num_qubits=2, rotation_blocks='ry', entanglement_blocks='cz')
+estimator = StatevectorEstimator()
+
+def cost_function(params):
+    pub = (ansatz, hamiltonian, params)
+    job = estimator.run([pub])
+    result = job.result()
+    energy = result[0].data.evs
+    return energy
+
+initial_params = np.random.random(ansatz.num_parameters)
+
+result = minimize(cost_function, initial_params, method='COBYLA')
+
+print(result.fun)
